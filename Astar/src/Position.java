@@ -1,5 +1,5 @@
 /**
- * Created by EliasBrattli on 15/11/2016.
+ * Datatype for showing a position (x, y) on a 2d grid
  */
 public class Position {
     int x;

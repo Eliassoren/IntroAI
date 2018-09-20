@@ -4,7 +4,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 
 /**
- * Created by EliasBrattli on 09/10/2016.
+ *
  */
 public class AstarGraph {
     static ArrayList<Node> nodes;
@@ -13,15 +13,29 @@ public class AstarGraph {
     static Node xstartNode;
     static Node xgoalNode;
     static int checkedCount;
+    static boolean drawOpenSet;
+    static boolean drawClosedSet;
    // static int startVal = 0;
    // static int goalVal;
     static int NODE_AMOUNT = 0, EDGE_AMOUNT = 0;
 
 
-
+    private static String getPath(String board) {
+        switch (board) {
+            case "1-1": return "/data/boards/board-1-1.txt";
+            case "1-2": return "/data/boards/board-1-2.txt";
+            case "1-3": return "/data/boards/board-1-3.txt";
+            case "1-4": return "/data/boards/board-1-4.txt";
+            case "2-1": return "/data/boards/board-2-1.txt";
+            case "2-2": return "/data/boards/board-2-2.txt";
+            case "2-3": return "/data/boards/board-2-3.txt";
+            case "2-4": return "/data/boards/board-2-4.txt";
+            default: return "/data/boards/board-1-1.txt";
+        }
+    }
     // Finds manhattan distance between two nodes
     static int calcDistance (Node thisNode, Node goal) {
-        return Math.abs(goal.position.x-thisNode.position.x) +
+        return 5*Math.abs(goal.position.x-thisNode.position.x) +
                 Math.abs(goal.position.y-thisNode.position.y);
     }
     // Used nodeTo update priorities.
@@ -60,27 +74,28 @@ public class AstarGraph {
     }
 
 
-    static void astar(Node startNode, Node goalNode, int width, int height, String dijkstraOrBfs){
-        boolean dijkstra = dijkstraOrBfs.equals("dijkstra");
-        boolean bfs = dijkstraOrBfs.equals("bfs");
-        nodeQueue =  !bfs ? new PriorityQueue<>() : new LinkedList<>();
+    static void astar(Node startNode, Node goalNode, String algorithm){
+        boolean dijkstra = algorithm.equals("d");
+        boolean bfs = algorithm.equals("bfs");
+        nodeQueue =  bfs ? new LinkedList<>() :  new PriorityQueue<>(); // BFS uses a stack, an open queue
         startNode.weight = 0;
         startNode.pathCost = 0;
         startNode.checked = true;
         nodeQueue.add(startNode);
 
-
-        while (!nodeQueue.isEmpty()){
+        while (!nodeQueue.isEmpty()) {
             Node curr = nodeQueue.poll();
             checkedCount++;
-            if(curr.id == goalNode.id)reconstructPath(startNode,goalNode);
-            ArrayList<Node> neighbors = findNeighbors(curr);
-            for(Node neighbor : neighbors) {
-                if(curr.prevNode != null && neighbor.id != curr.prevNode.id || curr.id == startNode.id)
-                updateCost(curr, neighbor, goalNode, dijkstra, bfs);
+            if(curr.id == goalNode.id) {
+                reconstructPath(startNode,goalNode);
+            }
+            for(Node neighbor : findNeighbors(curr)) {
+                if(curr.prevNode != null && neighbor != curr.prevNode || curr == startNode) {
+                    // Check for each neighbor which is not the node we came from
+                    updateCost(curr, neighbor, goalNode, dijkstra, bfs);
+                }
             }
         }
-
     }
     static void reconstructPath(Node startNode, Node goalNode){
         System.out.println("Reconstructing path");
@@ -89,7 +104,7 @@ public class AstarGraph {
         Node n = goalNode;
         ArrayList<Node> path = new ArrayList<>();
 
-        while (n.id != startNode.id && path.size() < 40) {
+        while (n != startNode && path.size() < 40) {
             path.add(n);
             n = n.prevNode;
         }
@@ -98,8 +113,8 @@ public class AstarGraph {
             for (int j = 0; j < BoardReader.idGrid.length; j++) {
                 Node node = nodes.get(BoardReader.idGrid[j][k]);
                 String cell = node.cellData;
-                if(nodeQueue.contains(node)) cell = "0";
-                if(closedSet.contains(node)) cell = "X";
+                if(nodeQueue.contains(node) && drawOpenSet) cell = "0";
+                if(closedSet.contains(node) && drawClosedSet) cell = "X";
                 if(path.contains(node)) cell = "(";
                 if(node.id == startNode.id) cell = "A";
                 if(node.id == goalNode.id) cell = "B";
@@ -107,56 +122,26 @@ public class AstarGraph {
             }
             System.out.println();
         }
-        System.out.println(startNode.position.x+","+startNode.position.y);
         System.out.println("Checked nodes: "+ checkedCount);
         System.out.println("Cost: "+(goalNode.pathCost));
     }
 
-    private static void printInitialBoards() {
-        System.out.println("Startnode "+BoardReader.startNode.id);
-        System.out.println("Goalnode "+BoardReader.goalNode.id);
-        System.out.println("--------ID GRID ----------------");
-        String padding;
-        for (int k = 0; k < BoardReader.idGrid[0].length; k++) {
-            for (int j = 0; j < BoardReader.idGrid.length; j++) {
-                int id = BoardReader.idGrid[j][k];
-                if(id < 10) padding = "   ";
-                else if(id < 100) padding = "  ";
-                else padding = " ";
-                System.out.print(padding+id);
-            }
-            System.out.println();
-        }
-        System.out.println("-------------INITIAL BOARD-------------");
-        for (int k = 0; k < BoardReader.idGrid[0].length; k++) {
-            for (int j = 0; j < BoardReader.idGrid.length; j++) {
 
-                System.out.print(nodes.get(BoardReader.idGrid[j][k]).cellData+" ");
-            }
-            System.out.println();
-        }
-        System.out.println("------------------------------------------------");
-    }
 
     public static void main(String[] args){
        try{
-           // Uncomment a file path to test it
-         // String path = "/data/boards/board-1-1.txt";
-          //String path = "/data/boards/board-1-2.txt";
-       //   String path = "/data/boards/board-1-3.txt";
-          //String path = "/data/boards/board-1-4.txt";
-        String path = "/data/boards/board-2-1.txt";
-     // String path = "/data/boards/board-2-2.txt";
-//          String path = "/data/boards/board-2-3.txt";
-//          String path = "/data/boards/board-2-4.txt";
-           nodes = BoardReader.generateNodes(path);
+           // To run, click on the green "start" button in IDE
+           // or javac AstarGraph.java && java AstarGraph in terminal
+           String boardFilePath = getPath("2-1"); // 1-2 for board 1-2, write 2-1 for board 2-1 and so on.
 
-           printInitialBoards();
-           String dijkstraOrBfs = "dijkstra"; // bfs: bfs, dijkstra: dijkstra, astar: empty
-           astar(BoardReader.startNode, BoardReader.goalNode, BoardReader.width, BoardReader.height, dijkstraOrBfs);
-            //calculateRuntime(0,25);
-        } catch(Exception ne){
-           ne.printStackTrace();
+           nodes = BoardReader.generateNodes(boardFilePath);
+           drawClosedSet = false; // True for task 3
+           drawOpenSet = false; // True for task 3
+           BoardReader.printInitialBoards(nodes);
+           String algorithm = ""; // bfs: bfs, dijkstra: d, A*: empty
+           astar(BoardReader.startNode, BoardReader.goalNode, algorithm);
+        } catch(Exception e){
+           e.printStackTrace();
        }
 
     }

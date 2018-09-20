@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -78,12 +79,37 @@ public class BoardReader {
                 node.weight = 1;
                 break;
             case "A":
-                node.weight = 1;
+                node.weight = 0;
 
             case "B":
-                node.weight = 1;
+                node.weight = 0;
         }
         return node;
     }
 
+    public static void printInitialBoards(ArrayList<Node> nodes) {
+        System.out.println("Startnode "+startNode.id);
+        System.out.println("Goalnode "+goalNode.id);
+        System.out.println("--------ID GRID ----------------");
+        String padding;
+        for (int k = 0; k < idGrid[0].length; k++) {
+            for (int j = 0; j < idGrid.length; j++) {
+                int id = idGrid[j][k];
+                if(id < 10) padding = "   ";
+                else if(id < 100) padding = "  ";
+                else padding = " ";
+                System.out.print(padding+id);
+            }
+            System.out.println();
+        }
+        System.out.println("-------------INITIAL BOARD-------------");
+        for (int k = 0; k < idGrid[0].length; k++) {
+            for (int j = 0; j < idGrid.length; j++) {
+
+                System.out.print(nodes.get(idGrid[j][k]).cellData+" ");
+            }
+            System.out.println();
+        }
+        System.out.println("------------------------------------------------");
+    }
 }
