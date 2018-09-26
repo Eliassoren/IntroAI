@@ -12,10 +12,13 @@ public class BoardReader {
     public static Node goalNode;
     static int[][] idGrid;
     static int width, height;
+    static int minimumWeight;
     // Can generate a board from a grid
     public static ArrayList<Node> generateNodes(String path) {
         String filePath = new File("").getAbsolutePath().concat(path);
+        System.out.println(filePath);
         String line;
+        System.out.println(path);
         ArrayList<Node> nodes = new ArrayList<>(); // A flattened grid
         int y = 0, id = 0;
         try(BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath))){
@@ -36,7 +39,7 @@ public class BoardReader {
                 y++;
             }
             height = y;
-            idGrid = new int[width][height];
+            idGrid = new int[width][height]; // A grid of indexes in arraylist
             int i = 0, j = 0;
             for(Node n : nodes) {
                 idGrid[i++][j] = n.id;
@@ -59,9 +62,10 @@ public class BoardReader {
         switch (cell) {
             case ".":
                 node.weight = 1;
+                minimumWeight = 1;
                 break;
             case "#":
-                node.weight = Integer.MAX_VALUE/3;
+                node.weight = Integer.MAX_VALUE/10;
                 break;
             case "w":
                 node.weight = 100;
@@ -73,6 +77,7 @@ public class BoardReader {
                 node.weight = 10;
                 break;
             case "g":
+                minimumWeight = 5;
                 node.weight = 5;
                 break;
             case "r":

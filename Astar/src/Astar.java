@@ -1,12 +1,13 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
 /**
- *
+ * Main class containing algorithm
  */
-public class AstarGraph {
+public class Astar {
     static ArrayList<Node> nodes;
     static ArrayList<Node> closedSet = new ArrayList<>();
     static Queue<Node> nodeQueue;
@@ -34,29 +35,32 @@ public class AstarGraph {
         }
     }
     // Finds manhattan distance between two nodes
-    static int calcDistance (Node thisNode, Node goal) {
-        return 5*Math.abs(goal.position.x-thisNode.position.x) +
+    // 5 is added as a minimum weight
+    static int calcDistance (Node thisNode, Node goal, int minimumWeight) {
+        return minimumWeight*Math.abs(goal.position.x-thisNode.position.x) +
                 Math.abs(goal.position.y-thisNode.position.y);
     }
     // Used nodeTo update priorities.
     static void updateCost(Node node, Node nodeTo, Node goal, boolean dijkstra, boolean bfs){
+        int bfsWeight = 1;
+        if(nodeTo.weight == 0) bfsWeight = 0;
+        //if(nodeTo.weight > 50) bfsWeight = Integer.MAX_VALUE/10;
+        if(nodeTo.pathCost > node.pathCost + (!bfs?nodeTo.weight : bfsWeight)){
+            nodeTo.pathCost = node.pathCost + (!bfs?nodeTo.weight : bfsWeight);
+            nodeTo.prevNode = node; // Build linked list
+            // Priority, fscore.
+            nodeTo.pri = node.pathCost + (!bfs? nodeTo.weight : 1) + (!dijkstra && !bfs? calcDistance(nodeTo, goal, BoardReader.minimumWeight) : 0);
 
-        if(nodeTo.pathCost > node.pathCost + nodeTo.weight){
-            nodeTo.pathCost = node.pathCost + nodeTo.weight;
-            nodeTo.prevNode = node;
-            nodeTo.pri = node.pathCost + (!bfs? nodeTo.weight:0) + (!dijkstra && !bfs? calcDistance(nodeTo, goal) : 0);
-            // If we've already found the node, remove and add it again nodeTo see if we will change its priority.
-            if(nodeTo.checked) {
+            // If we've already found the node, remove and add it again nodeTo see effect of changed priority.
+            if(nodeQueue.contains(nodeTo)) {
                 nodeQueue.remove(nodeTo);
                 nodeQueue.add(nodeTo);
             }
-            else{
-                // We've discovered a new node, add it nodeTo find priority.
+            else {
+                // We've discovered a new node, add it nodeTo find priority in line.
                 nodeQueue.add(nodeTo);
                 nodeTo.checked = true;
             }
-        } else {
-            closedSet.add(nodeTo);
         }
     }
     // Can find up to four neighbors as moving directions are north, south, east, west
@@ -84,17 +88,21 @@ public class AstarGraph {
         nodeQueue.add(startNode);
 
         while (!nodeQueue.isEmpty()) {
-            Node curr = nodeQueue.poll();
-            checkedCount++;
-            if(curr.id == goalNode.id) {
+            Node curr = nodeQueue.poll(); // Remove first element from priorityqueue
+            closedSet.add(curr);
+            checkedCount++; // Counter used to check efficiency of algorithm
+            if(curr != null && curr.id == goalNode.id) {
                 reconstructPath(startNode,goalNode);
+                break;
             }
             for(Node neighbor : findNeighbors(curr)) {
-                if(curr.prevNode != null && neighbor != curr.prevNode || curr == startNode) {
-                    // Check for each neighbor which is not the node we came from
-                    updateCost(curr, neighbor, goalNode, dijkstra, bfs);
+                    // We've discovered a new node, add it nodeTo find priority in line.
+                    if(curr.prevNode != null && neighbor.id != curr.prevNode.id || curr.id == startNode.id) {
+                        // Check for each neighbor which is not the node we came from
+                        updateCost(curr, neighbor, goalNode, dijkstra, bfs);
+                    }
                 }
-            }
+
         }
     }
     static void reconstructPath(Node startNode, Node goalNode){
@@ -104,7 +112,8 @@ public class AstarGraph {
         Node n = goalNode;
         ArrayList<Node> path = new ArrayList<>();
 
-        while (n != startNode && path.size() < 40) {
+        // Traverse the built linkedlist
+        while (n != startNode) {
             path.add(n);
             n = n.prevNode;
         }
@@ -114,7 +123,7 @@ public class AstarGraph {
                 Node node = nodes.get(BoardReader.idGrid[j][k]);
                 String cell = node.cellData;
                 if(nodeQueue.contains(node) && drawOpenSet) cell = "0";
-                if(closedSet.contains(node) && drawClosedSet) cell = "X";
+                else if(closedSet.contains(node) && drawClosedSet) cell = "X";
                 if(path.contains(node)) cell = "(";
                 if(node.id == startNode.id) cell = "A";
                 if(node.id == goalNode.id) cell = "B";
@@ -130,19 +139,18 @@ public class AstarGraph {
 
     public static void main(String[] args){
        try{
-           // To run, click on the green "start" button in IDE
-           // or javac AstarGraph.java && java AstarGraph in terminal
-           String boardFilePath = getPath("2-1"); // 1-2 for board 1-2, write 2-1 for board 2-1 and so on.
-
+           // To run, click on the green "start" button in IDEA
+           // or javac Astar.java && java Astar in terminal
+           String boardNumber = "2-4";
+           String boardFilePath = getPath(boardNumber); // 1-2 for board 1-2, write 2-1 for board 2-1 and so on.
            nodes = BoardReader.generateNodes(boardFilePath);
-           drawClosedSet = false; // True for task 3
-           drawOpenSet = false; // True for task 3
+           drawClosedSet = true; // True for task 3
+           drawOpenSet = true; // True for task 3
            BoardReader.printInitialBoards(nodes);
            String algorithm = ""; // bfs: bfs, dijkstra: d, A*: empty
            astar(BoardReader.startNode, BoardReader.goalNode, algorithm);
         } catch(Exception e){
            e.printStackTrace();
        }
-
     }
 }
